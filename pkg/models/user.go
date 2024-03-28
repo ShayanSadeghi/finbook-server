@@ -2,6 +2,7 @@ package models
 
 import (
 	"finbook-server/pkg/config"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -10,13 +11,11 @@ var db *gorm.DB
 
 type User struct {
 	gorm.Model
-	id       uint64 `gorm:"primarykey"json:"id"`
+	Id       uint64 `json:"id" gorm:"primaryKey"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
-
-var users []User
 
 func init() {
 	config.Connect()
@@ -36,14 +35,36 @@ func GetAllUsers() []User {
 	return Users
 }
 
-func GetUserByID(Id uint64) (*User, *gorm.DB) {
+func GetUserByID(Id uint64) *User {
 	var getUser User
-	db := db.Where("id=?", Id).Find(&getUser)
-	return &getUser, db
+	if result := db.First(&getUser, Id); result.Error != nil {
+		fmt.Println(result.Error)
+		return nil
+	}
+	return &getUser
 }
 
 func DeleteUser(Id uint64) User {
 	var user User
-	db.Where("id=?", Id).Delete(user)
+	db.Where("id=?", Id).Delete(&user)
 	return user
+}
+
+func UpdateUser(Id uint64, updateUser User) User {
+	userDetail := GetUserByID(Id)
+
+	if updateUser.Username != "" {
+		userDetail.Username = updateUser.Username
+	}
+
+	if updateUser.Email != "" {
+		userDetail.Email = updateUser.Email
+	}
+
+	if updateUser.Password != "" {
+		userDetail.Password = updateUser.Password
+	}
+
+	db.Save(userDetail)
+	return *userDetail
 }
