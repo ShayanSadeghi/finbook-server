@@ -13,6 +13,8 @@ func main() {
 	r := mux.NewRouter()
 
 	routes.RegisterUsersRoutes(r)
+	routes.RegisterBankRoutes(r)
+	routes.RegisterAccountRoutes(r)
 	http.Handle("/", r)
 
 	fmt.Println("App is running on port 8000")

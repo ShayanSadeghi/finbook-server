@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
-
 type User struct {
 	gorm.Model
 	Id       uint64 `json:"id" gorm:"primaryKey"`
