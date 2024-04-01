@@ -15,6 +15,9 @@ func main() {
 	routes.RegisterUsersRoutes(r)
 	routes.RegisterBankRoutes(r)
 	routes.RegisterAccountRoutes(r)
+	routes.RegisterResourceCatRoutes(r)
+	routes.RegisterResourceRoutes(r)
+	routes.RegisterTrxRoutes(r)
 	http.Handle("/", r)
 
 	fmt.Println("App is running on port 8000")
