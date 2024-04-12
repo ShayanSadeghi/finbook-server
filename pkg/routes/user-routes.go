@@ -7,6 +7,8 @@ import (
 )
 
 var RegisterUsersRoutes = func(router *mux.Router) {
+	router.HandleFunc("/login/", controllers.Login).Methods("POST")
+	//TODO: these have to become private routes
 	router.HandleFunc("/users/", controllers.GetUsers).Methods("GET")
 	router.HandleFunc("/users/{UserId}", controllers.GetUserByID).Methods("GET")
 	router.HandleFunc("/users/", controllers.CreateUser).Methods("POST")

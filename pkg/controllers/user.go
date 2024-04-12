@@ -11,6 +11,27 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Error struct {
+	Message string `json:"message"`
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	data := &models.User{}
+	utils.ParseBody(r, data)
+	user := models.LoginByEmail(data.Email, data.Password)
+
+	w.Header().Set("Content-Type", "application/json")
+	if user != nil {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(user)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		err := Error{Message: "login faild"}
+		json.NewEncoder(w).Encode(err)
+	}
+
+}
+
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users := models.GetAllUsers()
 

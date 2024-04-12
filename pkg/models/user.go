@@ -22,6 +22,7 @@ func init() {
 }
 
 func (u *User) CreateUser() *User {
+	// TODO: hash password then save
 	// db.Save(u)
 	db.Create(&u)
 	return u
@@ -39,6 +40,17 @@ func GetUserByID(Id uint64) *User {
 		fmt.Println(result.Error)
 		return nil
 	}
+	return &getUser
+}
+
+func LoginByEmail(email string, password string) *User {
+	var getUser User
+	// TODO: hash password and check
+	if result := db.First(&getUser, User{Email: email, Password: password}); result.Error != nil {
+		fmt.Println(result.Error)
+		return nil
+	}
+	// TODO: return jwt
 	return &getUser
 }
 
