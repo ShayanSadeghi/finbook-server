@@ -12,8 +12,25 @@ import (
 )
 
 func GetAccounts(w http.ResponseWriter, r *http.Request) {
-	accounts := models.GetAllAccounts()
 	w.Header().Set("Content-Type", "application/json")
+	tokenString := r.Header.Get("Authorization")
+
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	accounts, err := models.GetAllAccounts(tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "failed to authorize")
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(accounts)
 }

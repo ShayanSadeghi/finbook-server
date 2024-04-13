@@ -11,23 +11,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Error struct {
+type Result struct {
+	Success bool   `json:"success"`
 	Message string `json:"message"`
+	Token   string `json:"token"`
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	data := &models.User{}
 	utils.ParseBody(r, data)
-	user := models.LoginByEmail(data.Email, data.Password)
+	token, err := models.LoginByEmail(data.Email, data.Password)
 
 	w.Header().Set("Content-Type", "application/json")
-	if user != nil {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(user)
-	} else {
+	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		err := Error{Message: "login faild"}
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(Result{Success: false, Message: "Login failed"})
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(Result{Success: true, Message: "Login Successfully", Token: token})
+
 	}
 
 }

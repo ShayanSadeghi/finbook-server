@@ -43,15 +43,16 @@ func GetUserByID(Id uint64) *User {
 	return &getUser
 }
 
-func LoginByEmail(email string, password string) *User {
-	var getUser User
+func LoginByEmail(email string, password string) (string, error) {
+	var user User
 	// TODO: hash password and check
-	if result := db.First(&getUser, User{Email: email, Password: password}); result.Error != nil {
+	if result := db.First(&user, User{Email: email, Password: password}); result.Error != nil {
 		fmt.Println(result.Error)
-		return nil
+		return "", result.Error
 	}
-	// TODO: return jwt
-	return &getUser
+
+	return createToken(user)
+
 }
 
 func DeleteUser(Id uint64) User {

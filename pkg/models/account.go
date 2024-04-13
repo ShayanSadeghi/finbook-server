@@ -27,10 +27,17 @@ func (a *Account) CreateAccount() *Account {
 	return a
 }
 
-func GetAllAccounts() []Account {
+func GetAllAccounts(tokenString string) ([]Account, error) {
+
+	user, err := verifyToken(tokenString)
+
+	if err != nil {
+		return nil, err
+	}
+
 	var Accounts []Account
-	db.Find(&Accounts)
-	return Accounts
+	db.Find(&Accounts, Account{UserID: user.Id})
+	return Accounts, nil
 }
 
 func GetAccountByID(Id uint64) *Account {
