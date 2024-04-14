@@ -4,6 +4,7 @@ import (
 	"finbook-server/pkg/config"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -18,14 +19,20 @@ type User struct {
 func init() {
 	config.Connect()
 	db = config.GetDB()
+	db.QueryFields = true
 	db.AutoMigrate(&User{})
 }
 
-func (u *User) CreateUser() *User {
-	// TODO: hash password then save
-	// db.Save(u)
+func (u *User) CreateUser() (*User, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), 14)
+
+	if err != nil {
+		return &User{}, err
+	}
+
+	u.Password = string(hash)
 	db.Create(&u)
-	return u
+	return u, nil
 }
 
 func GetAllUsers() []User {
@@ -45,7 +52,16 @@ func GetUserByID(Id uint64) *User {
 
 func LoginByEmail(email string, password string) (string, error) {
 	var user User
-	// TODO: hash password and check
+	result := db.First(&user, User{Email: email})
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return "", fmt.Errorf("incorrect password")
+	}
+
 	if result := db.First(&user, User{Email: email, Password: password}); result.Error != nil {
 		fmt.Println(result.Error)
 		return "", result.Error

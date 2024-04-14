@@ -25,7 +25,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(Result{Success: false, Message: "Login failed"})
+		json.NewEncoder(w).Encode(Result{Success: false, Message: err.Error()})
 	} else {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(Result{Success: true, Message: "Login Successfully", Token: token})
@@ -45,11 +45,15 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	newUser := &models.User{}
 	utils.ParseBody(r, newUser)
-	u := newUser.CreateUser()
-	res, _ := json.Marshal(u)
+	u, err := newUser.CreateUser()
+	if err != nil {
+		w.WriteHeader(http.StatusNotImplemented)
+		return
+	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	json.NewEncoder(w).Encode(u)
 }
 
 func GetUserByID(w http.ResponseWriter, r *http.Request) {
