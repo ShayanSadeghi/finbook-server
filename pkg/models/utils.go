@@ -5,12 +5,19 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
 var db *gorm.DB
 
-var secretKey = []byte("my_key")
+type Env struct {
+	SECRET_KEY string
+}
+
+var envFile, err = godotenv.Read(".env")
+
+var secretKey = []byte(envFile["SECRET_KEY"])
 
 type UserClaim struct {
 	Id    uint64 `json:"id"`
@@ -19,9 +26,9 @@ type UserClaim struct {
 }
 
 func createToken(user User) (string, error) {
+	secretKey = []byte(envFile["SECRET_KEY"])
 	claims := UserClaim{user.Id, user.Email, jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24))}}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"id": user.Id, "exp": time.Now().Add(time.Hour * 24).Unix()})
 	tokenString, err := token.SignedString(secretKey)
 
 	if err != nil {
