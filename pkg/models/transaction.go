@@ -23,34 +23,65 @@ func init() {
 	db.AutoMigrate(&Transaction{})
 }
 
-func (t *Transaction) CreateTransaction() *Transaction {
+func (t *Transaction) CreateTransaction(tokenString string) (*Transaction, error) {
+	verifiedAccount, err := verifyAccount(t.Id, tokenString)
+
+	if err != nil {
+		return nil, err
+	}
+	if !verifiedAccount {
+		return nil, fmt.Errorf("account is not available")
+	}
+
 	db.Save(&t)
-	return t
+	return t, nil
 }
 
-func GetAllTransactions() []Transaction {
+func GetAllTransactions(tokenString string) ([]Transaction, error) {
 	var Transactions []Transaction
 	db.Find(&Transactions)
-	return Transactions
+	return Transactions, nil
 }
 
-func GetTransactionByID(Id uint64) *Transaction {
+func GetTransactionByID(Id uint64, tokenString string) (*Transaction, error) {
 	var getTransaction Transaction
+	verifiedAccount, err := verifyAccount(Id, tokenString)
+
+	if err != nil {
+		return nil, err
+	}
+	if !verifiedAccount {
+		return nil, fmt.Errorf("account is not available")
+	}
+
 	if result := db.First(&getTransaction, Id); result.Error != nil {
 		fmt.Println(result.Error)
-		return nil
+		return nil, result.Error
 	}
-	return &getTransaction
+	return &getTransaction, nil
 }
 
-func DeleteTransaction(Id uint64) Transaction {
+func DeleteTransaction(Id uint64, tokenString string) (Transaction, error) {
 	var transaction Transaction
+	verifiedAccount, err := verifyAccount(Id, tokenString)
+
+	if err != nil {
+		return Transaction{}, err
+	}
+	if !verifiedAccount {
+		return Transaction{}, fmt.Errorf("account is not available")
+	}
+
 	db.Where("id=?", Id).Delete(&transaction)
-	return transaction
+	return transaction, nil
 }
 
-func UpdateTransaction(Id uint64, updateTrx Transaction) Transaction {
-	trxDetail := GetTransactionByID(Id)
+func UpdateTransaction(Id uint64, updateTrx Transaction, tokenString string) (Transaction, error) {
+	trxDetail, err := GetTransactionByID(Id, tokenString)
+	if err != nil {
+		return Transaction{}, nil
+	}
+
 	if updateTrx.Title != "" {
 		trxDetail.Title = updateTrx.Title
 	}
@@ -72,5 +103,5 @@ func UpdateTransaction(Id uint64, updateTrx Transaction) Transaction {
 	}
 
 	db.Save(trxDetail)
-	return *trxDetail
+	return *trxDetail, nil
 }

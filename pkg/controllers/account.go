@@ -37,8 +37,24 @@ func GetAccounts(w http.ResponseWriter, r *http.Request) {
 
 func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	newAccount := &models.Account{}
+
+	tokenString := r.Header.Get("Authorization")
 	utils.ParseBody(r, newAccount)
-	a := newAccount.CreateAccount()
+
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+	a, err := newAccount.CreateAccount(tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotImplemented)
+		fmt.Fprintf(w, "account creation error")
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -47,6 +63,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 func GetAccountByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	tokenString := r.Header.Get("Authorization")
 	accountId := vars["id"]
 	Id, err := strconv.ParseUint(accountId, 10, 64)
 
@@ -54,11 +71,27 @@ func GetAccountByID(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error while parsing")
 	}
 
-	accountDetail := models.GetAccountByID(Id)
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	accountDetail, err := models.GetAccountByID(Id, tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotModified)
+		fmt.Fprintf(w, "Error on fetching data")
+		return
+	}
+
 	if accountDetail == nil {
 		http.Error(w, "Account not found", http.StatusNotFound)
 		return
 	}
+
 	res, _ := json.Marshal(accountDetail)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -66,7 +99,9 @@ func GetAccountByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
 	vars := mux.Vars(r)
+
 	accountId := vars["id"]
 	Id, err := strconv.ParseUint(accountId, 10, 64)
 
@@ -74,7 +109,13 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error while parsing")
 	}
 
-	accountDetail := models.DeleteAccount(Id)
+	accountDetail, err := models.DeleteAccount(Id, tokenString)
+	if err != nil {
+		w.WriteHeader(http.StatusNotModified)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+
 	res, _ := json.Marshal(accountDetail)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -83,6 +124,8 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 func UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	var UpdateAccount = &models.Account{}
+
+	tokenString := r.Header.Get("Authorization")
 	utils.ParseBody(r, UpdateAccount)
 
 	vars := mux.Vars(r)
@@ -94,7 +137,21 @@ func UpdateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accountDetail := models.UpdateAccount(Id, *UpdateAccount)
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	accountDetail, err := models.UpdateAccount(Id, *UpdateAccount, tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotModified)
+		fmt.Fprintf(w, "Error on updating data")
+		return
+	}
 
 	res, _ := json.Marshal(accountDetail)
 	w.Header().Set("Content-Type", "application/json")

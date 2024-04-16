@@ -12,7 +12,22 @@ import (
 )
 
 func GetTransactions(w http.ResponseWriter, r *http.Request) {
-	trxs := models.GetAllTransactions()
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+
+	tokenString = tokenString[len("Bearer "):]
+
+	trxs, err := models.GetAllTransactions(tokenString)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(trxs)
@@ -21,7 +36,21 @@ func GetTransactions(w http.ResponseWriter, r *http.Request) {
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	newTrx := &models.Transaction{}
 	utils.ParseBody(r, newTrx)
-	b := newTrx.CreateTransaction()
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+	tokenString = tokenString[len("Bearer "):]
+
+	b, err := newTrx.CreateTransaction(tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotImplemented)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -29,6 +58,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTrxByID(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
 	vars := mux.Vars(r)
 	trxId := vars["id"]
 	Id, err := strconv.ParseUint(trxId, 10, 64)
@@ -36,8 +66,21 @@ func GetTrxByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("error while parsing")
 	}
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+	tokenString = tokenString[len("Bearer "):]
 
-	trxDetail := models.GetTransactionByID(Id)
+	trxDetail, err := models.GetTransactionByID(Id, tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+
 	if trxDetail == nil {
 		http.Error(w, "Transaction not found", http.StatusNotFound)
 		return
@@ -49,6 +92,7 @@ func GetTrxByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
 	vars := mux.Vars(r)
 	trxId := vars["id"]
 	Id, err := strconv.ParseUint(trxId, 10, 64)
@@ -57,7 +101,21 @@ func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error while parsing")
 	}
 
-	trxDetail := models.DeleteTransaction(Id)
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+	tokenString = tokenString[len("Bearer "):]
+
+	trxDetail, err := models.DeleteTransaction(Id, tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotModified)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+
 	res, _ := json.Marshal(trxDetail)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -66,6 +124,8 @@ func DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 
 func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	var updateTrx = &models.Transaction{}
+
+	tokenString := r.Header.Get("Authorization")
 	utils.ParseBody(r, updateTrx)
 
 	vars := mux.Vars(r)
@@ -77,7 +137,20 @@ func UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trxDetail := models.UpdateTransaction(Id, *updateTrx)
+	if tokenString == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, "Missing Authorization Header")
+		return
+	}
+	tokenString = tokenString[len("Bearer "):]
+
+	trxDetail, err := models.UpdateTransaction(Id, *updateTrx, tokenString)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotModified)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
 
 	res, _ := json.Marshal(trxDetail)
 	w.Header().Set("Content-Type", "application/json")

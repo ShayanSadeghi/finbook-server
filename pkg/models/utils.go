@@ -53,3 +53,24 @@ func verifyToken(tokenString string) (*UserClaim, error) {
 
 	return token.Claims.(*UserClaim), nil
 }
+
+func verifyAccount(accountId uint64, tokenString string) (bool, error) {
+
+	var accounts []Account
+
+	user, err := verifyToken(tokenString)
+
+	if err != nil {
+		return false, err
+	}
+
+	db.Find(&accounts, Account{UserID: user.Id})
+
+	for i := range len(accounts) {
+		if accounts[i].Id == accountId {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}

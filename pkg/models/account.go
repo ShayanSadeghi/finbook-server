@@ -22,9 +22,17 @@ func init() {
 	db.AutoMigrate(&Account{})
 }
 
-func (a *Account) CreateAccount() *Account {
+func (a *Account) CreateAccount(tokenString string) (*Account, error) {
+	user, err := verifyToken(tokenString)
+
+	if err != nil {
+		return nil, err
+	}
+
+	a.UserID = user.Id
+
 	db.Create(&a)
-	return a
+	return a, nil
 }
 
 func GetAllAccounts(tokenString string) ([]Account, error) {
@@ -40,23 +48,42 @@ func GetAllAccounts(tokenString string) ([]Account, error) {
 	return Accounts, nil
 }
 
-func GetAccountByID(Id uint64) *Account {
+func GetAccountByID(Id uint64, tokenString string) (*Account, error) {
 	var getAccount Account
-	if result := db.First(&getAccount, Id); result.Error != nil {
-		fmt.Println(result.Error)
-		return nil
+
+	user, err := verifyToken(tokenString)
+
+	if err != nil {
+		return nil, err
 	}
-	return &getAccount
+
+	db.First(&getAccount, Account{Id: Id, UserID: user.Id})
+
+	return &getAccount, nil
 }
 
-func DeleteAccount(Id uint64) Account {
+func DeleteAccount(Id uint64, tokenString string) (Account, error) {
 	var account Account
-	db.Where("id=?", Id).Delete(&account)
-	return account
+
+	user, err := verifyToken(tokenString)
+
+	if err != nil {
+		return account, err
+	}
+
+	db.First(&account, Account{Id: Id, UserID: user.Id}).Delete(&account)
+	if &account == nil {
+		return account, fmt.Errorf("account not found")
+	}
+	return account, nil
 }
 
-func UpdateAccount(Id uint64, updateAccount Account) Account {
-	accountDetail := GetAccountByID(Id)
+func UpdateAccount(Id uint64, updateAccount Account, tokenString string) (Account, error) {
+	accountDetail, err := GetAccountByID(Id, tokenString)
+
+	if err != nil {
+		return Account{}, err
+	}
 
 	if updateAccount.Title != "" {
 		accountDetail.Title = updateAccount.Title
@@ -75,6 +102,6 @@ func UpdateAccount(Id uint64, updateAccount Account) Account {
 	}
 
 	db.Save(accountDetail)
-	return *accountDetail
+	return *accountDetail, nil
 
 }
