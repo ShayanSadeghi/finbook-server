@@ -58,13 +58,9 @@ func LoginByEmail(email string, password string) (string, error) {
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+
 	if err != nil {
 		return "", fmt.Errorf("incorrect password")
-	}
-
-	if result := db.First(&user, User{Email: email, Password: password}); result.Error != nil {
-		fmt.Println(result.Error)
-		return "", result.Error
 	}
 
 	return createToken(user)
