@@ -24,7 +24,7 @@ func init() {
 }
 
 func (t *Transaction) CreateTransaction(tokenString string) (*Transaction, error) {
-	verifiedAccount, err := verifyAccount(t.Id, tokenString)
+	verifiedAccount, err := verifyAccount(t.AccountId, tokenString)
 
 	if err != nil {
 		return nil, err
