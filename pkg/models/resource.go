@@ -12,7 +12,7 @@ type Resource struct {
 	ID         uint64           `json:"id" gorm:"primaryKey"`
 	Title      string           `json:"title"`
 	CategoryID uint64           `json:"category_id"`
-	Category   ResourceCategory `gorm:"references:ID"`
+	Category   ResourceCategory `json:"category_detail" gorm:"references:ID"`
 }
 
 func init() {

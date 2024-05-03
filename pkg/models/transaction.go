@@ -15,8 +15,8 @@ type Transaction struct {
 	Description string   `json:"description"`
 	ResourceID  uint64   `json:"resource_id"`
 	AccountID   uint64   `json:"account_id"`
-	Resource    Resource `gorm:"references:ID"`
-	Account     Account  `gorm:"references:ID"`
+	Resource    Resource `json:"resource_detail" gorm:"references:ID"`
+	Account     Account  `json:"account_detail" gorm:"references:ID"`
 }
 
 func init() {
@@ -55,7 +55,7 @@ func GetAllTransactions(tokenString string) ([]Transaction, error) {
 	for _, acc := range Accounts {
 		accountIDs = append(accountIDs, acc.ID)
 	}
-	db.Preload("Resource").Preload("Account").Preload("Account.Bank").Where("account_id IN ?", accountIDs).Find(&Transactions)
+	db.Preload("Resource").Preload("Resource.Category").Preload("Account").Preload("Account.Bank").Where("account_id IN ?", accountIDs).Find(&Transactions)
 	return Transactions, nil
 }
 
