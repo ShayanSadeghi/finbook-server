@@ -20,14 +20,14 @@ var envFile, err = godotenv.Read(".env")
 var secretKey = []byte(envFile["SECRET_KEY"])
 
 type UserClaim struct {
-	Id    uint64 `json:"id"`
+	ID    uint64 `json:"id"`
 	Email string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 func createToken(user User) (string, error) {
 	secretKey = []byte(envFile["SECRET_KEY"])
-	claims := UserClaim{user.Id, user.Email, jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24))}}
+	claims := UserClaim{user.ID, user.Email, jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24))}}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(secretKey)
 
@@ -64,10 +64,10 @@ func verifyAccount(accountId uint64, tokenString string) (bool, error) {
 		return false, err
 	}
 
-	db.Find(&accounts, Account{UserID: user.Id})
+	db.Find(&accounts, Account{UserID: user.ID})
 
 	for i := range len(accounts) {
-		if accounts[i].Id == accountId {
+		if accounts[i].ID == accountId {
 			return true, nil
 		}
 	}

@@ -9,11 +9,13 @@ import (
 
 type Account struct {
 	gorm.Model
-	Id            uint64 `json:"id" gorm:"primaryKey"`
+	ID            uint64 `json:"id" gorm:"primaryKey"`
 	Title         string `json:"title"`
 	AccountNumber string `json:"account_number"`
-	BankId        uint64 `json:"bank_id" gorm:"foreignKey:Bank.Id"`
-	UserID        uint64 `json:"user_id" gorm:"foreignKey:User.Id"`
+	BankID        uint64 `json:"bank_id"`
+	UserID        uint64 `json:"user_id"`
+	Bank          Bank   `gorm:"references:ID"`
+	User          User   `gorm:"references:ID"`
 }
 
 func init() {
@@ -29,7 +31,7 @@ func (a *Account) CreateAccount(tokenString string) (*Account, error) {
 		return nil, err
 	}
 
-	a.UserID = user.Id
+	a.UserID = user.ID
 
 	db.Create(&a)
 	return a, nil
@@ -44,7 +46,7 @@ func GetAllAccounts(tokenString string) ([]Account, error) {
 	}
 
 	var Accounts []Account
-	db.Find(&Accounts, Account{UserID: user.Id})
+	db.Preload("Bank").Find(&Accounts, Account{UserID: user.ID})
 	return Accounts, nil
 }
 
@@ -57,7 +59,7 @@ func GetAccountByID(Id uint64, tokenString string) (*Account, error) {
 		return nil, err
 	}
 
-	db.First(&getAccount, Account{Id: Id, UserID: user.Id})
+	db.First(&getAccount, Account{ID: Id, UserID: user.ID})
 
 	return &getAccount, nil
 }
@@ -71,7 +73,7 @@ func DeleteAccount(Id uint64, tokenString string) (Account, error) {
 		return account, err
 	}
 
-	db.First(&account, Account{Id: Id, UserID: user.Id}).Delete(&account)
+	db.First(&account, Account{ID: Id, UserID: user.ID}).Delete(&account)
 	if &account == nil {
 		return account, fmt.Errorf("account not found")
 	}
@@ -93,8 +95,8 @@ func UpdateAccount(Id uint64, updateAccount Account, tokenString string) (Accoun
 		accountDetail.AccountNumber = updateAccount.AccountNumber
 	}
 
-	if updateAccount.BankId != 0 {
-		accountDetail.BankId = updateAccount.BankId
+	if updateAccount.BankID != 0 {
+		accountDetail.BankID = updateAccount.BankID
 	}
 
 	if updateAccount.UserID != 0 {

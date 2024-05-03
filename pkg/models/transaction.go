@@ -9,12 +9,14 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	Id          uint64  `json:"id" gorm:"primaryKey"`
-	Amount      float64 `json:"amount"`
-	Title       string  `json:"title"`
-	Description string  `json:"description"`
-	ResourceId  uint64  `json:"resource_id" gorm:"foreignKey:Resource.Id"`
-	AccountId   uint64  `json:"account_id" gorm:"foreignKey:Account.Id"`
+	ID          uint64   `json:"id" gorm:"primaryKey"`
+	Amount      float64  `json:"amount"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	ResourceID  uint64   `json:"resource_id"`
+	AccountID   uint64   `json:"account_id"`
+	Resource    Resource `gorm:"references:ID"`
+	Account     Account  `gorm:"references:ID"`
 }
 
 func init() {
@@ -24,7 +26,7 @@ func init() {
 }
 
 func (t *Transaction) CreateTransaction(tokenString string) (*Transaction, error) {
-	verifiedAccount, err := verifyAccount(t.AccountId, tokenString)
+	verifiedAccount, err := verifyAccount(t.AccountID, tokenString)
 
 	if err != nil {
 		return nil, err
@@ -39,7 +41,21 @@ func (t *Transaction) CreateTransaction(tokenString string) (*Transaction, error
 
 func GetAllTransactions(tokenString string) ([]Transaction, error) {
 	var Transactions []Transaction
-	db.Find(&Transactions)
+	var Accounts []Account
+
+	user, err := verifyToken(tokenString)
+
+	if err != nil {
+		return nil, err
+	}
+
+	db.Find(&Accounts, Account{UserID: user.ID})
+	//extract account ids
+	var accountIDs []uint64
+	for _, acc := range Accounts {
+		accountIDs = append(accountIDs, acc.ID)
+	}
+	db.Preload("Resource").Preload("Account").Preload("Account.Bank").Where("account_id IN ?", accountIDs).Find(&Transactions)
 	return Transactions, nil
 }
 
@@ -54,7 +70,7 @@ func GetTransactionByID(Id uint64, tokenString string) (*Transaction, error) {
 		return nil, fmt.Errorf("account is not available")
 	}
 
-	if result := db.First(&getTransaction, Id); result.Error != nil {
+	if result := db.Preload("Resource").Preload("Account").First(&getTransaction, Id); result.Error != nil {
 		fmt.Println(result.Error)
 		return nil, result.Error
 	}
@@ -94,12 +110,12 @@ func UpdateTransaction(Id uint64, updateTrx Transaction, tokenString string) (Tr
 		trxDetail.Description = updateTrx.Description
 	}
 
-	if updateTrx.ResourceId != 0 {
-		trxDetail.ResourceId = updateTrx.ResourceId
+	if updateTrx.ResourceID != 0 {
+		trxDetail.ResourceID = updateTrx.ResourceID
 	}
 
-	if updateTrx.AccountId != 0 {
-		trxDetail.AccountId = updateTrx.AccountId
+	if updateTrx.AccountID != 0 {
+		trxDetail.AccountID = updateTrx.AccountID
 	}
 
 	db.Save(trxDetail)

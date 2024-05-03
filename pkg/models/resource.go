@@ -9,9 +9,10 @@ import (
 
 type Resource struct {
 	gorm.Model
-	Id         uint64 `json:"id" gorm:"primaryKey"`
-	Title      string `json:"title"`
-	CategoryId uint64 `json:"category_id" gorm:"foreignKey:ResourceCategory.Id"`
+	ID         uint64           `json:"id" gorm:"primaryKey"`
+	Title      string           `json:"title"`
+	CategoryID uint64           `json:"category_id"`
+	Category   ResourceCategory `gorm:"references:ID"`
 }
 
 func init() {
@@ -27,13 +28,13 @@ func (r *Resource) CreateResource() *Resource {
 
 func GetAllResources() []Resource {
 	var Resources []Resource
-	db.Find(&Resources)
+	db.Preload("Category").Find(&Resources)
 	return Resources
 }
 
 func GetResourceByID(Id uint64) *Resource {
 	var getResource Resource
-	if result := db.First(&getResource, Id); result.Error != nil {
+	if result := db.Preload("Category").First(&getResource, Id); result.Error != nil {
 		fmt.Println(result.Error)
 		return nil
 	}

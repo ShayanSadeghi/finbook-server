@@ -9,7 +9,7 @@ import (
 
 type Bank struct {
 	gorm.Model
-	Id    uint64 `json:"id" gorm:"primaryKey"`
+	ID    uint64 `json:"id" gorm:"primaryKey"`
 	Title string `json:"title"`
 }
 
